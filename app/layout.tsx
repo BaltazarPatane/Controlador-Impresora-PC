@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     title: 'Impresora',
   },
   icons: {
-    icon: '/icon.svg',
-    apple: '/apple-icon.png',
+    icon: '/logo-ars3d-192.png',
+    apple: '/logo-ars3d-192.png',
   },
 }
 
