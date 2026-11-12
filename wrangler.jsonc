@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "controlador-impresora-web",
+  "name": "controlador",
   "compatibility_date": "2026-10-23",
   "assets": {
     "directory": "./out",

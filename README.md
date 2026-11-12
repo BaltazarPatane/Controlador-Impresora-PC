@@ -8,6 +8,8 @@
 
 **Interfaz de operador · Comunicación serie · G-code · Marlin**
 
+**[Abrir la aplicación publicada](https://controlador.impresora-ars.workers.dev/)**
+
 ![Next.js](https://img.shields.io/badge/Next.js-16-161616?style=flat-square&logo=nextdotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Web Serial](https://img.shields.io/badge/Web%20Serial-USB-00878F?style=flat-square)
@@ -25,7 +27,9 @@
 
 **Controlador Impresora PC** reúne en una interfaz de escritorio el movimiento manual, la ejecución de programas y el diagnóstico de una impresora cartesiana de gran escala del **Astillero Río Santiago**. Se conecta por USB a una **Arduino Mega 2560** con **Marlin**. Desde la PC se pueden mover los ejes, hacer homing, consultar posiciones, editar un G-code, transmitirlo por USB o controlar un trabajo almacenado en la tarjeta SD de la máquina.
 
-El controlador organiza la operación y muestra lo que informa Marlin. El firmware conserva la planificación del movimiento, el accionamiento de la máquina y el control del eje Z hidráulico. [Firmware de la impresora 3D de viviendas](https://github.com/BaltazarPatane/Impresora-3D-de-Viviendas)
+El controlador organiza la operación y muestra lo que informa Marlin. El firmware conserva la planificación del movimiento y el accionamiento de la máquina. El proyecto actual es la impresora cartesiana, con dos motores en Z. [Firmware Marlin Cartesiana](https://github.com/BaltazarPatane/Impresora-Cartesiana)
+
+El controlador de celular se desarrolla en [Firmware-C3-Controlador-e-Interfaz](https://github.com/BaltazarPatane/Firmware-C3-Controlador-e-Interfaz). Su página se sirve desde la ESP32-C3 dentro de la red local; este repositorio corresponde a la aplicación de PC que se comunica directamente con la Mega por USB.
 
 ## Origen y evolución
 
@@ -80,7 +84,7 @@ Abre archivos `.gcode`, `.gco`, `.gc`, `.ngc` y `.txt` de hasta **20 MiB**. El e
 
 Reconstruye la **trayectoria XYZ** del G-code. Interpreta movimientos lineales `G0/G1`, arcos XY `G2/G3`, unidades `G20/G21`, modos absoluto y relativo `G90/G91` y cambios de coordenadas `G92`. Incluye vista isométrica o superior, rotación, zoom y un control para mostrar los desplazamientos rápidos.
 
-**Diseño final** muestra el recorrido completo. **En ejecución** distingue los tramos confirmados de los pendientes según el avance disponible. La vista se limita a la trayectoria reconstruida del archivo. El volumen de material depositado, la cinemática hidráulica y las compensaciones aplicadas por Marlin se evalúan por separado.
+**Diseño final** muestra el recorrido completo. **En ejecución** distingue los tramos confirmados de los pendientes según el avance disponible. La vista se limita a la trayectoria reconstruida del archivo. El volumen de material depositado y las compensaciones aplicadas por Marlin se evalúan por separado.
 
 Para mantener fluida la vista con programas grandes, el dibujo reduce la cantidad de segmentos representados. El transmisor toma sus comandos del archivo validado.
 
@@ -166,6 +170,10 @@ npm run build
 La salida de producción queda en `out/`. Para servir esa compilación en la propia PC, ejecutá `python3 -m http.server 8000 --bind 127.0.0.1 --directory out` y abrí [http://localhost:8000](http://localhost:8000).
 
 En **Cloudflare Workers**, el repositorio incluye `wrangler.jsonc` con `out/` como directorio de recursos estáticos. Si usás Workers Builds, seleccioná `main` y configurá `npm run build` como comando de compilación y `npx wrangler deploy` como comando de despliegue. En **Cloudflare Pages**, configurá la misma compilación y `out` como directorio de salida. [Cloudflare · Static Assets](https://developers.cloudflare.com/workers/static-assets/)
+
+El Worker actual se llama **`controlador`** y está publicado en **https://controlador.impresora-ars.workers.dev/**. `wrangler.jsonc` utiliza ese nombre. La dirección anterior `controlador-impresora-web.baltazarpatane12.workers.dev` dejó de resolver. La denominación interna de npm se conserva para no alterar el proyecto ni su archivo de dependencias.
+
+La revisión del 12 de noviembre de 2026 comprobó las cinco pantallas y los modos Normal/Diagnóstico en la página publicada. La actualización conserva el código de la aplicación y corrige las referencias del proyecto y el destino de publicación. La observación del sitio por sí sola no identifica el commit exacto desplegado ni confirma una prueba con la impresora conectada.
 
 ## Validación
 
