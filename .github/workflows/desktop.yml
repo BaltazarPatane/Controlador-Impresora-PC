@@ -36,10 +36,19 @@ jobs:
         run: npm --prefix desktop test
       - name: Generar instalador de Windows
         run: npm --prefix desktop run dist:win
-      - uses: actions/upload-artifact@v4
+      - name: Verificar la instalación local
+        shell: pwsh
+        run: |
+          $installer = (Resolve-Path 'dist-desktop/Controlador-Impresora-PC-Windows-x64.exe').Path
+          $installation = Join-Path $env:RUNNER_TEMP 'ControladorImpresoraPC'
+          $process = Start-Process -FilePath $installer -ArgumentList '/S', "/D=$installation" -Wait -PassThru -WindowStyle Hidden
+          if ($process.ExitCode -ne 0) { throw "Falló la instalación: $($process.ExitCode)" }
+          if (!(Test-Path -LiteralPath (Join-Path $installation 'Controlador Impresora PC.exe'))) { throw 'Falta el ejecutable instalado' }
+          if (!(Test-Path -LiteralPath (Join-Path $installation 'resources/ui/index.html'))) { throw 'Faltan los recursos de la interfaz local' }
+          Get-FileHash -LiteralPath $installer -Algorithm SHA256
+      - uses: actions/upload-artifact@v7
         with:
-          name: Controlador-Impresora-PC-Windows-x64
           path: dist-desktop/Controlador-Impresora-PC-Windows-x64.exe
           if-no-files-found: error
-          compression-level: 0
-          retention-days: 30
+          archive: false
+          retention-days: 90
