@@ -1,0 +1,35 @@
+name: Verificar la interfaz web USB
+
+on:
+  push:
+    branches: [codex/controlador-pc-web]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm install --no-save --package-lock=false playwright@1.65.0
+      - run: npx playwright install --with-deps chromium
+      - name: Probar en Chromium con una Mega simulada
+        run: |
+          python3 -m http.server --bind 127.0.0.1 --directory out 8775 &
+          server=$!
+          trap 'kill "$server"' EXIT
+          curl --silent --show-error --retry 5 --retry-connrefused --output /dev/null http://127.0.0.1:8775/
+          node qa/usb-controls.cjs
