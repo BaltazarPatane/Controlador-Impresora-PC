@@ -1,0 +1,45 @@
+name: Compilar controlador de escritorio
+
+on:
+  push:
+    branches: [codex/controlador-pc-offline]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Instalar dependencias de la aplicación
+        run: npm ci
+      - name: Verificar lógica de control
+        run: |
+          npm run test:console
+          npm test
+          npm run typecheck
+      - name: Generar los recursos locales
+        run: npm run build
+      - name: Instalar herramientas de escritorio
+        run: npm --prefix desktop install --no-audit --no-fund
+      - name: Probar la aplicación sin red
+        run: npm --prefix desktop test
+      - name: Generar instalador de Windows
+        run: npm --prefix desktop run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Controlador-Impresora-PC-Windows-x64
+          path: dist-desktop/Controlador-Impresora-PC-Windows-x64.exe
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
