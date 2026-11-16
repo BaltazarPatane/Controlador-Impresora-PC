@@ -10,7 +10,8 @@ import { EmergencyStop } from '@/components/emergency-stop'
 import { cn } from '@/lib/utils'
 
 export function ConsolaScreen() {
-  const { console: normalEntries, diagnosticConsole, consoleMode, setConsoleMode, clearConsole, connection, connectPrinter, mode, linkDetail } = usePrinter()
+  const { console: normalEntries, diagnosticConsole, consoleMode, setConsoleMode, clearConsole,
+    connection, connectPrinter, disconnectPrinter, mode, linkDetail } = usePrinter()
   const entries = consoleMode === 'normal' ? normalEntries : diagnosticConsole
   const [autoScroll, setAutoScroll] = useState(true)
 
@@ -20,7 +21,19 @@ export function ConsolaScreen() {
       {/* Header */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5">
         <h2 className="mr-auto text-sm font-semibold">Consola</h2>
-        <ConnectionStatus connection={connection} onConnect={() => { void connectPrinter() }} className="text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <ConnectionStatus connection={connection} onConnect={() => { void connectPrinter() }} className="text-muted-foreground" />
+          {connection === 'connected' && (
+            <button
+              type="button"
+              onClick={() => { void disconnectPrinter() }}
+              aria-label="Desconectar USB"
+              className="h-8 rounded-lg border border-border bg-muted/40 px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              Desconectar
+            </button>
+          )}
+        </div>
         <div className="flex rounded-lg border border-border bg-background/60 p-0.5" role="group" aria-label="Modo de consola">
           {(['normal', 'diagnostic'] as const).map(value => (
             <button key={value} type="button" aria-pressed={consoleMode === value}

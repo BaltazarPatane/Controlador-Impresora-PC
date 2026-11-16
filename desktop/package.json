@@ -1,6 +1,6 @@
 {
   "name": "controlador-impresora-pc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Controlador de la impresora cartesiana ARS por USB",
   "author": "Baltazar Patané",

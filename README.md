@@ -60,11 +60,13 @@ La aplicación se construye con **Next.js, React, TypeScript y Tailwind CSS**. N
 
 El estado de la conexión y la cola de comandos se mantienen al cambiar de pestaña. El espacio de Programa, Control y Visualizador también conserva el archivo abierto, el borrador y la selección de SD durante la navegación.
 
+En **Consola**, usá **Desconectar** para liberar el puerto USB. El enlace queda cerrado hasta que vuelvas a pulsar **Conectar USB**.
+
 ## Interfaz y funcionalidades
 
 ### Movimiento
 
-Posiciones X, Y y Z informadas por Marlin, pasos de **0,1, 1, 10 y 100 mm**, mandos relativos de desplazamiento y homing general o por eje. Un desplazamiento usa `G91`, `G0` y `G90`, seguido de `M114` para actualizar las coordenadas que muestra la interfaz. El homing usa `G28`.
+Posiciones X, Y y Z informadas por Marlin, pasos de **1, 10, 100 y 1000 mm**, mandos relativos de desplazamiento y homing general o por eje. Un desplazamiento usa `G91`, `G0` y `G90`, seguido de `M114` para actualizar las coordenadas que muestra la interfaz. El homing usa `G28`.
 
 ![Pestaña Movimiento con las coordenadas XYZ, los pasos y los mandos de desplazamiento y homing](docs/img/movimiento.webp)
 

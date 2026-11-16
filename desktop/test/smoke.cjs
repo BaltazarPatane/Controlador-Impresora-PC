@@ -25,11 +25,14 @@ async function run() {
     }
     return {
       labels: matches().map(button => button.textContent.trim()),
+      steps: [...document.querySelectorAll('[aria-label="Paso de movimiento en milímetros"] [role=radio]')]
+        .map(button => button.textContent.trim()),
       serial: window.isSecureContext && typeof navigator.serial?.requestPort === 'function',
       ports: (await navigator.serial.getPorts()).length,
     }
   })()`)
   assert.deepEqual(buttons.labels, ['Movimiento', 'Control', 'Programa', 'Visualizador', 'Consola'])
+  assert.deepEqual(buttons.steps, ['1', '10', '100', '1000'])
   assert.equal(buttons.serial, true)
   assert.equal(buttons.ports, 0)
 
