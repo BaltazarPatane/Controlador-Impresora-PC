@@ -182,11 +182,10 @@ export class WebSerialPrinterTransport implements PrinterTransport {
   // store uses it to send a single M114 and read the real current position.
   private onReady: (() => void) | null = null
 
-  private serialEventsBound = false
+  private boundSerial: Serial | null = null
   private readonly onSerialConnect = () => {
     // A previously authorized device came back. Only auto-reopen when we are
     // idle and the choice is unambiguous (exactly one authorized port).
-    if (this.port) return
     void this.tryAutoConnect()
   }
   private readonly onSerialDisconnect = (event: Event) => {
@@ -241,7 +240,7 @@ export class WebSerialPrinterTransport implements PrinterTransport {
   sendTracked(command: string, meta?: SendMeta): Promise<void> {
     const cmd = command.trim()
     if (!cmd) return Promise.resolve()
-    if (this.connState !== 'connected') {
+    if (this.closing || this.connState !== 'connected') {
       return Promise.reject(new Error('Sin conexión con la impresora'))
     }
     return new Promise<void>((resolve, reject) => {
@@ -303,7 +302,7 @@ export class WebSerialPrinterTransport implements PrinterTransport {
     if (!isWebSerialSupported()) {
       throw new Error('web-serial-unsupported')
     }
-    if (this.port) return // already connected/connecting — never open twice
+    if (this.port || this.closing) return
     let port: SerialPort
     try {
       port = await navigator.serial.requestPort()
@@ -312,11 +311,15 @@ export class WebSerialPrinterTransport implements PrinterTransport {
       // disconnected quietly, do not spam the console.
       return
     }
+    this.bindSerialEvents()
     await this.beginConnection(port)
   }
 
   async disconnect(): Promise<void> {
-    // Manual teardown (e.g. unmount). Do not auto-reconnect afterwards.
+    // A manual disconnect keeps the port free until the operator connects again.
+    this.boundSerial?.removeEventListener('connect', this.onSerialConnect)
+    this.boundSerial?.removeEventListener('disconnect', this.onSerialDisconnect)
+    this.boundSerial = null
     await this.cleanup('disconnected')
   }
 
@@ -335,7 +338,7 @@ export class WebSerialPrinterTransport implements PrinterTransport {
       return
     }
 
-    if (this.connState !== 'connected') {
+    if (this.closing || this.connState !== 'connected') {
       throw new Error('Sin conexión con la impresora')
     }
 
@@ -357,16 +360,18 @@ export class WebSerialPrinterTransport implements PrinterTransport {
   // ---- connection lifecycle ------------------------------------------------
 
   private bindSerialEvents() {
-    if (this.serialEventsBound || !isWebSerialSupported()) return
-    this.serialEventsBound = true
-    navigator.serial.addEventListener('connect', this.onSerialConnect)
-    navigator.serial.addEventListener('disconnect', this.onSerialDisconnect)
+    if (this.boundSerial || !isWebSerialSupported()) return
+    this.boundSerial = navigator.serial
+    this.boundSerial.addEventListener('connect', this.onSerialConnect)
+    this.boundSerial.addEventListener('disconnect', this.onSerialDisconnect)
   }
 
   private async tryAutoConnect(): Promise<void> {
-    if (this.port) return
+    const serial = this.boundSerial
+    if (!serial || this.port || this.closing) return
     try {
-      const ports = await navigator.serial.getPorts()
+      const ports = await serial.getPorts()
+      if (this.boundSerial !== serial || this.port || this.closing) return
       if (ports.length === 1) {
         // Exactly one previously authorized port → reopen it automatically.
         await this.beginConnection(ports[0])
@@ -375,13 +380,15 @@ export class WebSerialPrinterTransport implements PrinterTransport {
         this.setConnection('disconnected')
       }
     } catch {
-      this.setConnection('disconnected')
+      if (this.boundSerial === serial && !this.port && !this.closing) {
+        this.setConnection('disconnected')
+      }
     }
   }
 
   /** Open a chosen/authorized port and start the handshake sequence. */
   private async beginConnection(port: SerialPort): Promise<void> {
-    if (this.port) return
+    if (this.port || this.closing) return
     this.closing = false
     this.readAbort = false
     this.rxBuffer = ''
@@ -598,7 +605,7 @@ export class WebSerialPrinterTransport implements PrinterTransport {
 
   private processQueue() {
     if (this.currentCommand) return // waiting for the current `ok`
-    if (this.connState !== 'connected') return // hold until Marlin is ready
+    if (this.closing || this.connState !== 'connected') return
     const next = this.queue.shift()
     if (!next) return
     this.currentCommand = next

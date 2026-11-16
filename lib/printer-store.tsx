@@ -107,6 +107,7 @@ interface PrinterStoreValue {
   /** Open the browser USB chooser (must be called from a user gesture). */
   connectUsb: () => Promise<void>
   connectPrinter: () => Promise<void>
+  disconnectPrinter: () => Promise<void>
   setStep: (step: Step) => void
   jog: (axis: Axis, direction: 1 | -1) => Promise<void>
   home: (target: HomeTarget) => Promise<void>
@@ -463,6 +464,8 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
     }
   }, [transport, toast, mode])
 
+  const disconnectPrinter = useCallback(() => transport.disconnect(), [transport])
+
   const pushHistory = useCallback((cmd: string) => {
     setCommandHistory((prev) => {
       if (prev[prev.length - 1] === cmd) return prev
@@ -806,6 +809,7 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
       refreshSdDetails,
       sdFiles, sdBusy, sdError, refreshSdFiles, startSdProgram, pauseSdProgram, resumeSdProgram, cancelSdProgram,
       connectPrinter: connectUsb,
+      disconnectPrinter,
       connection,
       machineState,
       position,
@@ -850,6 +854,7 @@ export function PrinterProvider({ children }: { children: React.ReactNode }) {
       movementsAheadOfPause,
       webSerialSupported,
       connectUsb,
+      disconnectPrinter,
       setStep,
       jog,
       home,

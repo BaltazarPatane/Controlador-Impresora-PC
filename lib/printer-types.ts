@@ -23,7 +23,8 @@ export type MachineState =
 
 export type Axis = 'x' | 'y' | 'z'
 
-export type Step = 0.1 | 1 | 10 | 100
+export const STEPS = [1, 10, 100, 1000] as const
+export type Step = (typeof STEPS)[number]
 
 /**
  * Position in millimetres. `null` on any axis means "no real value received
@@ -269,8 +270,6 @@ export interface PrinterState {
   position: Position
   selectedStep: Step
 }
-
-export const STEPS: Step[] = [0.1, 1, 10, 100]
 
 export const MACHINE_STATE_LABELS: Record<MachineState, string> = {
   idle: 'En espera',
