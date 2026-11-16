@@ -1,0 +1,54 @@
+name: Compilar controlador de escritorio
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Instalar dependencias de la aplicación
+        run: npm ci
+      - name: Verificar lógica de control
+        run: |
+          npm run test:console
+          npm test
+          npm run typecheck
+      - name: Generar los recursos locales
+        run: npm run build
+      - name: Instalar herramientas de escritorio
+        run: npm --prefix desktop install --no-audit --no-fund
+      - name: Probar la aplicación sin red
+        run: npm --prefix desktop test
+      - name: Generar instalador de Windows
+        run: npm --prefix desktop run dist:win
+      - name: Verificar la instalación local
+        shell: pwsh
+        run: |
+          $installer = (Resolve-Path 'dist-desktop/Controlador-Impresora-PC-Windows-x64.exe').Path
+          $installation = Join-Path $env:RUNNER_TEMP 'ControladorImpresoraPC'
+          $process = Start-Process -FilePath $installer -ArgumentList '/S', "/D=$installation" -Wait -PassThru -WindowStyle Hidden
+          if ($process.ExitCode -ne 0) { throw "Falló la instalación: $($process.ExitCode)" }
+          if (!(Test-Path -LiteralPath (Join-Path $installation 'Controlador Impresora PC.exe'))) { throw 'Falta el ejecutable instalado' }
+          if (!(Test-Path -LiteralPath (Join-Path $installation 'resources/ui/index.html'))) { throw 'Faltan los recursos de la interfaz local' }
+          Get-FileHash -LiteralPath $installer -Algorithm SHA256
+      - uses: actions/upload-artifact@v7
+        with:
+          path: dist-desktop/Controlador-Impresora-PC-Windows-x64.exe
+          if-no-files-found: error
+          archive: false
+          retention-days: 90

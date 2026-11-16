@@ -8,7 +8,7 @@
 
 **Interfaz de operador · Comunicación serie · G-code · Marlin**
 
-**[Abrir la aplicación publicada](https://controlador.impresora-ars.workers.dev/)**
+**[Abrir la aplicación publicada](https://controlador.impresora-ars.workers.dev/) · [Instalar en Windows sin Wi-Fi](desktop/README.md)**
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-161616?style=flat-square&logo=nextdotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)

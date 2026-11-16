@@ -1,0 +1,35 @@
+{
+  "name": "controlador-impresora-pc",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Controlador de la impresora cartesiana ARS por USB",
+  "author": "Baltazar Patané",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "electron test/smoke.cjs",
+    "dist:win": "electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "45.3.3",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "org.ars.controlador.impresora.pc",
+    "productName": "Controlador Impresora PC",
+    "directories": {
+      "output": "../dist-desktop"
+    },
+    "files": ["main.cjs"],
+    "extraResources": [{ "from": "../out", "to": "ui" }],
+    "win": {
+      "icon": "../public/logo-ars3d-512.png",
+      "artifactName": "Controlador-Impresora-PC-Windows-x64.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "createStartMenuShortcut": true,
+      "createDesktopShortcut": true
+    }
+  }
+}

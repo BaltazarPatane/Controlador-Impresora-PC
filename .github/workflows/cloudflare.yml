@@ -1,0 +1,64 @@
+name: Publicar el controlador en Cloudflare
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar el Worker existente
+        id: worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo '::notice::GitHub Actions no tiene configurado CLOUDFLARE_API_TOKEN.'
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          api=https://api.cloudflare.com/client/v4
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          account="$CLOUDFLARE_ACCOUNT_ID"
+          if [[ -z "$account" ]]; then
+            accounts=$(curl --silent --show-error --fail --header "$auth" "$api/accounts")
+            account=$(jq -r 'if (.result | length) == 1 then .result[0].id else "" end' <<< "$accounts")
+          fi
+          if [[ ! "$account" =~ ^[0-9a-fA-F]{32}$ ]]; then
+            echo '::error::La cuenta del Worker no se pudo identificar.'
+            exit 1
+          fi
+          subdomain=$(curl --silent --show-error --fail --header "$auth" "$api/accounts/$account/workers/subdomain" | jq -r '.result.subdomain')
+          if [[ "$subdomain" != 'impresora-ars' ]]; then
+            echo '::error::La cuenta configurada corresponde a otro subdominio de Workers.'
+            exit 1
+          fi
+          curl --silent --show-error --fail --header "$auth" --output /dev/null "$api/accounts/$account/workers/scripts/controlador/settings"
+          echo "CLOUDFLARE_ACCOUNT_ID=$account" >> "$GITHUB_ENV"
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        if: steps.worker.outputs.ready == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+      - if: steps.worker.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.worker.outputs.ready == 'true'
+        run: npm run build
+      - name: Desplegar el controlador
+        if: steps.worker.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ env.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy
